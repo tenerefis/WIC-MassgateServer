@@ -59,7 +59,7 @@ bool MMG_AccountProtocol::Query::FromStream(MMG_ProtocolDelimiters::Delimiter aD
 	if (!decryptedMsg.ReadUInt(this->m_RandomKey) || !decryptedMsg.ReadUInt(this->m_ProductId) || !decryptedMsg.ReadUInt(this->m_DistributionId))
 		return false;
 
-	switch(this->m_Delimiter)
+	switch (this->m_Delimiter)
 	{
 		case MMG_ProtocolDelimiters::ACCOUNT_AUTH_ACCOUNT_REQ:
 		{
@@ -85,7 +85,7 @@ bool MMG_AccountProtocol::Query::FromStream(MMG_ProtocolDelimiters::Delimiter aD
 
 			if (this->m_Authenticate.m_HasOldCredentials)
 			{
-				if(!this->m_Authenticate.m_Credentials.FromStream(&decryptedMsg))
+				if (!this->m_Authenticate.m_Credentials.FromStream(&decryptedMsg))
 					return false;
 			}
 
@@ -273,7 +273,7 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 	}
 	else
 	{
-		switch(myQuery.m_Delimiter)
+		switch (myQuery.m_Delimiter)
 		{
 			// Account authorization: Login
 			case MMG_ProtocolDelimiters::ACCOUNT_AUTH_ACCOUNT_REQ:
@@ -370,32 +370,32 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 				myAuthToken->m_TokenId = MC_MTwister().Random();
 
 				//determine if credentials were valid
-				if(myAuthToken->m_AccountId == 0 && AuthQueryOK)		//account doesnt exist
+				if (myAuthToken->m_AccountId == 0 && AuthQueryOK)		//account doesnt exist
 				{
 					myStatusCode = AuthFailed_NoSuchAccount;
 					mySuccessFlag = 0;
 				}
-				else if(!hasher.CheckPassword(myPasswordMD5, myPasswordHash) && AuthQueryOK)	//wrong password
+				else if (!hasher.CheckPassword(myPasswordMD5, myPasswordHash) && AuthQueryOK)	//wrong password
 				{
 					myStatusCode = AuthFailed_BadCredentials;
 					mySuccessFlag = 0;
 				}
-				else if(isBanned && AuthQueryOK)						//account has been banned
+				else if (isBanned && AuthQueryOK)						//account has been banned
 				{
 					myStatusCode = AuthFailed_AccountBanned;
 					mySuccessFlag = 0;
 				}
-				else if(myAuthToken->m_ProfileId == 0 && AuthQueryOK)	//no profiles exist. bring up add profile box
+				else if (myAuthToken->m_ProfileId == 0 && AuthQueryOK)	//no profiles exist. bring up add profile box
 				{
 					myStatusCode = AuthFailed_RequestedProfileNotFound;
 					mySuccessFlag = 0;
 				}
-				else if(SvClientManager::ourInstance->AccountInUse(myAuthToken->m_AccountId))
+				else if (SvClientManager::ourInstance->AccountInUse(myAuthToken->m_AccountId))
 				{
 					myStatusCode = AuthFailed_AccountInUse;
 					mySuccessFlag = 0;
 				}
-				else if(!AuthQueryOK)									// something went wrong executing the query
+				else if (!AuthQueryOK)									// something went wrong executing the query
 				{
 					myStatusCode = AuthFailed_General; //ServerError
 					mySuccessFlag = 0;
@@ -424,13 +424,12 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 
 					//AuthFailed_AccountInUse, AuthFailed_ProfileInUse, AuthFailed_CdKeyInUse, AuthFailed_IllegalCDKey(not using)
 
-					//profile selection box was used
-					if(myQuery.m_Authenticate.m_UseProfile)
+					if (myQuery.m_Authenticate.m_UseProfile) //profile selection box was used
 					{
 						ProfileQueryOK = MySQLDatabase::ourInstance->QueryUserProfile(myAuthToken->m_AccountId, myQuery.m_Authenticate.m_UseProfile, myProfile);
 
-						//if(myQuery.m_Authenticate.m_UseProfile > 0 && ProfileQueryOK)
-						if(ProfileQueryOK)											//ok to login, set active profile
+						//if (myQuery.m_Authenticate.m_UseProfile > 0 && ProfileQueryOK)
+						if (ProfileQueryOK)											//ok to login, set active profile
 						{
 							myAuthToken->m_ProfileId = myProfile->m_ProfileId;
 							myStatusCode = AuthSuccess;
@@ -442,17 +441,15 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 							mySuccessFlag = 0;
 						}
 					}
-
-					//login button was used
-					else
+					else //login button was used
 					{
-						//if(myQuery.m_Authenticate.m_HasOldCredentials)
+						//if (myQuery.m_Authenticate.m_HasOldCredentials)
 						//myQuery.m_Authenticate.m_Credentials, myQuery.m_Authenticate.m_Profile, myQuery.m_Authenticate.m_UseProfile
 						//myAuthToken, myProfile
 
 						ProfileQueryOK = MySQLDatabase::ourInstance->QueryUserProfile(myAuthToken->m_AccountId, myAuthToken->m_ProfileId, myProfile);
 
-						if(myAuthToken->m_ProfileId > 0 && ProfileQueryOK)			// ok to login, set active profile
+						if (myAuthToken->m_ProfileId > 0 && ProfileQueryOK)			// ok to login, set active profile
 						{
 							myAuthToken->m_ProfileId = myProfile->m_ProfileId;
 							myStatusCode = AuthSuccess;
@@ -512,8 +509,7 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 				DebugLog(L_INFO, "ACCOUNT_CREATE_ACCOUNT_RSP:");
 				responseDelimiter = MMG_ProtocolDelimiters::ACCOUNT_CREATE_ACCOUNT_RSP;
 #ifdef USING_MYSQL_DATABASE
-				bool isPrivateKeyUser = false;
-
+				
 				uint myAccountId = 0;
 				uint myCdkeyId = 0;
 				
@@ -521,7 +517,8 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 				uint mySuccessFlag = 0;
 
 				bool CheckEmailQueryOK = MySQLDatabase::ourInstance->CheckIfEmailExists(myQuery.m_Create.m_Email, &myAccountId);
-				bool CheckCDKeyQueryOK = MySQLDatabase::ourInstance->CheckIfCDKeyExists(myQuery.m_EncryptionKeySequenceNumber, &myCdkeyId);
+				//bool CheckCDKeyQueryOK = MySQLDatabase::ourInstance->CheckIfCDKeyExists(myQuery.m_EncryptionKeySequenceNumber, &myCdkeyId);
+				bool CheckCDKeyQueryOK = true;
 
 				if (myAccountId > 0 && CheckEmailQueryOK)
 				{
@@ -540,83 +537,33 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 				}
 				else
 				{
-					uint checkId = 0;
-					uchar checkValidated = 0;
+					char realcountry[WIC_COUNTRY_MAX_LENGTH];
+					memset(realcountry, 0, sizeof(realcountry));
 
-					char checkEmail[WIC_EMAIL_MAX_LENGTH];
-					memset(checkEmail, 0, sizeof(checkEmail));
+					strcpy_s(realcountry, GeoIP::ClientLocateIP(aClient->GetIPAddress()));
 
-					bool CheckPrivateCDKeyQueryOk = MySQLDatabase::ourInstance->CheckIfPrivateCDKeyUser(myQuery.m_EncryptionKeySequenceNumber, &checkId, checkEmail, &checkValidated);
+					PasswordHash hasher(8, false);
 
-					if (checkId > 0 && CheckPrivateCDKeyQueryOk)
+					char myPasswordHash[WIC_PASSWORDHASH_MAX_LENGTH];
+					memset(myPasswordHash, 0, sizeof(myPasswordHash));
+
+					char myPasswordMD5[64];
+					memset(myPasswordMD5, 0, sizeof(myPasswordMD5));
+
+					MC_Misc::MD5String(myQuery.m_Create.m_Password, myPasswordMD5);
+					hasher.HashPassword(myPasswordHash, myPasswordMD5);
+
+					bool CreateQueryOK = MySQLDatabase::ourInstance->CreateUserAccount(myQuery.m_Create.m_Email, myPasswordHash, myQuery.m_Create.m_Country, realcountry, &myQuery.m_Create.m_EmailMeGameRelated, &myQuery.m_Create.m_AcceptsEmail, myQuery.m_EncryptionKeySequenceNumber, myQuery.m_CipherKeys);
+
+					if (CreateQueryOK)
 					{
-						// private
-						isPrivateKeyUser = true;
-						
-						uint myPrivateCDKeyId = 0;
-						uint checkAccountId = 0;
-
-						// todo: extra checks, ip address, cipherkeys? etc
-						bool AuthPrivateCDKeyQueryOk = MySQLDatabase::ourInstance->AuthPrivateCDKey(myQuery.m_EncryptionKeySequenceNumber, myQuery.m_Create.m_Email, &myPrivateCDKeyId, &checkAccountId);
-
-						if (myPrivateCDKeyId == 0 && AuthPrivateCDKeyQueryOk)
-						{
-							myStatusCode = CreateFailed_General;
-							mySuccessFlag = 0;
-						}
-						else if (checkAccountId > 0 && AuthPrivateCDKeyQueryOk)
-						{
-							myStatusCode = CreateFailed_CdKeyExhausted;
-							mySuccessFlag = 0;
-						}
-						else if (!AuthPrivateCDKeyQueryOk)
-						{
-							myStatusCode = CreateFailed_General;
-							mySuccessFlag = 0;
-						}
-						else
-						{
-							myStatusCode = ActionStatusCodes::Creating;
-							mySuccessFlag = 1;
-						}
+						myStatusCode = CreateSuccess;
+						mySuccessFlag = 1;
 					}
 					else
 					{
-						// purchased key from before the shutdown
-						myStatusCode = ActionStatusCodes::Creating;
-						mySuccessFlag = 1;
-					}
-
-					if (myStatusCode == ActionStatusCodes::Creating && mySuccessFlag == 1)
-					{
-						char realcountry[WIC_COUNTRY_MAX_LENGTH];
-						memset(realcountry, 0, sizeof(realcountry));
-
-						strcpy_s(realcountry, GeoIP::ClientLocateIP(aClient->GetIPAddress()));
-
-						PasswordHash hasher(8, false);
-
-						char myPasswordHash[WIC_PASSWORDHASH_MAX_LENGTH];
-						memset(myPasswordHash, 0, sizeof(myPasswordHash));
-
-						char myPasswordMD5[64];
-						memset(myPasswordMD5, 0, sizeof(myPasswordMD5));
-
-						MC_Misc::MD5String(myQuery.m_Create.m_Password, myPasswordMD5);
-						hasher.HashPassword(myPasswordHash, myPasswordMD5);
-
-						bool CreateQueryOK = MySQLDatabase::ourInstance->CreateUserAccount(isPrivateKeyUser, myQuery.m_Create.m_Email, myPasswordHash, myQuery.m_Create.m_Country, realcountry, &myQuery.m_Create.m_EmailMeGameRelated, &myQuery.m_Create.m_AcceptsEmail, myQuery.m_EncryptionKeySequenceNumber, myQuery.m_CipherKeys);
-
-						if (CreateQueryOK)
-						{
-							myStatusCode = CreateSuccess;
-							mySuccessFlag = 1;
-						}
-						else
-						{
-							myStatusCode = CreateFailed_General; //ServerError
-							mySuccessFlag = 0;
-						}
+						myStatusCode = CreateFailed_General; //ServerError
+						mySuccessFlag = 0;
 					}
 				}
 
@@ -708,27 +655,27 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 				bool AuthQueryOK = MySQLDatabase::ourInstance->AuthUserAccount(myQuery.m_RetrieveProfiles.m_Email, myPasswordHash, &isBanned, myAuthToken);
 
 				//determine if credentials were valid
-				if(myAuthToken->m_AccountId == 0 && AuthQueryOK)		//account doesnt exist
+				if (myAuthToken->m_AccountId == 0 && AuthQueryOK)		//account doesnt exist
 				{
 					myStatusCode = AuthFailed_BadCredentials;	//AuthFailed_NoSuchAccount
 					mySuccessFlag = 0;
 				}
-				else if(!hasher.CheckPassword(myPasswordMD5, myPasswordHash) && AuthQueryOK)	//wrong password
+				else if (!hasher.CheckPassword(myPasswordMD5, myPasswordHash) && AuthQueryOK)	//wrong password
 				{
 					myStatusCode = AuthFailed_BadCredentials;
 					mySuccessFlag = 0;
 				}
-				else if(isBanned && AuthQueryOK)						//account has been banned
+				else if (isBanned && AuthQueryOK)						//account has been banned
 				{
 					myStatusCode = AuthFailed_AccountBanned;
 					mySuccessFlag = 0;
 				}
-				else if(SvClientManager::ourInstance->AccountInUse(myAuthToken->m_AccountId))
+				else if (SvClientManager::ourInstance->AccountInUse(myAuthToken->m_AccountId))
 				{
 					myStatusCode = AuthFailed_AccountInUse;
 					mySuccessFlag = 0;
 				}
-				else if(!AuthQueryOK)									// something went wrong executing the query
+				else if (!AuthQueryOK)									// something went wrong executing the query
 				{
 					myStatusCode = AuthFailed_General; //ServerError
 					mySuccessFlag = 0;
@@ -755,7 +702,7 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 
 					bool RetrieveProfilesQueryOK = MySQLDatabase::ourInstance->RetrieveUserProfiles(myAuthToken->m_AccountId, &myProfileCount, myProfiles);
 
-					if(RetrieveProfilesQueryOK)
+					if (RetrieveProfilesQueryOK)
 					{
 						myStatusCode = AuthSuccess;
 						mySuccessFlag = 1;
@@ -823,7 +770,7 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 					{
 						bool CreateProfileQueryOK = MySQLDatabase::ourInstance->CreateUserProfile(myAuthToken->m_AccountId, myQuery.m_ModifyProfile.m_Name, myQuery.m_ModifyProfile.m_Email);
 					
-						if(CreateProfileQueryOK)			//create profile success
+						if (CreateProfileQueryOK)			//create profile success
 						{
 							myStatusCode = ModifySuccess;
 							mySuccessFlag = 1;
@@ -856,7 +803,7 @@ bool MMG_AccountProtocol::HandleMessage(SvClient *aClient, MN_ReadMessage *aMess
 					{
 						bool DeleteProfileQueryOK = MySQLDatabase::ourInstance->DeleteUserProfile(myAuthToken->m_AccountId, myQuery.m_ModifyProfile.m_ProfileId, myQuery.m_ModifyProfile.m_Email);
 					
-						if(DeleteProfileQueryOK)			//delete profile success
+						if (DeleteProfileQueryOK)			//delete profile success
 						{
 							myStatusCode = ModifySuccess;
 							mySuccessFlag = 1;

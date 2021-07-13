@@ -524,124 +524,6 @@ bool MySQLDatabase::CheckIfCDKeyExists(const uint sequenceNum, uint *dstId)
 	return true;
 }
 
-bool MySQLDatabase::CheckIfPrivateCDKeyUser(const uint sequencenum, uint *id, char *email, uchar *validated)
-{
-	char SQL[4096];
-	memset(SQL, 0, sizeof(SQL));
-
-	sprintf(SQL, "SELECT id, email, validated FROM %s WHERE sequencenum = ? LIMIT 1", TABLENAME[CDKEYSPRIVATE_TABLE]);
-
-	MySQLQuery query(this->m_Connection, SQL);
-	MYSQL_BIND param[1], result[3];
-	memset(param, 0, sizeof(param));
-	memset(result, 0, sizeof(result));
-
-	query.Bind(&param[0], &sequencenum);
-
-	query.Bind(&result[0], id);
-	query.Bind(&result[1], email, WIC_EMAIL_MAX_LENGTH);
-	query.Bind(&result[2], validated);
-
-	if(!query.StmtExecute(param, result))
-	{
-		DatabaseLog("CheckIfPrivateCDKeyUser() failed:");
-		*id = 0;
-		email = "";
-		*validated = 0;
-	}
-	else
-	{
-		if (!query.StmtFetch())
-		{
-			DatabaseLog("private sequence number not found");
-			*id = 0;
-			email = "";
-			*validated = 0;
-		}
-		else
-		{
-			DatabaseLog("private sequence number found");
-			//*dstId = id;
-			//strncpy(dstEmail, email, strlen(email));
-		}
-	}
-
-	if (!query.Success())
-		return false;
-
-	return true;
-}
-
-bool MySQLDatabase::AuthPrivateCDKey(const uint sequencenum, const char *email, uint *id, uint *accountid)
-{
-	char SQL[4096];
-	memset(SQL, 0, sizeof(SQL));
-
-	sprintf(SQL, "SELECT id, accountid FROM %s WHERE email = ? AND validated = 1 AND sequencenum = ? LIMIT 1", TABLENAME[CDKEYSPRIVATE_TABLE]);
-
-	MySQLQuery query(this->m_Connection, SQL);
-	MYSQL_BIND params[2], result[2];
-	memset(params, 0, sizeof(params));
-	memset(result, 0, sizeof(result));
-
-	query.Bind(&params[0], email, strlen(email));
-	query.Bind(&params[1], &sequencenum);
-
-	query.Bind(&result[0], id);
-	query.Bind(&result[1], accountid);
-
-	if(!query.StmtExecute(params, result))
-	{
-		DatabaseLog("AuthPrivateCDKey() failed:");
-		*id = 0;
-		*accountid = 0;
-	}
-	else
-	{
-		if (!query.StmtFetch())
-		{
-			*id = 0;
-			*accountid = 0;
-		}
-	}
-
-	if (!query.Success())
-		return false;
-
-	return true;
-}
-
-bool MySQLDatabase::UpdatePrivateCDKeyAccountID(const uint sequencenum, const char *email, const uint accountid)
-{
-	char SQL[4096];
-	memset(SQL, 0, sizeof(SQL));
-
-	// activates a "private" cd key by assigning the new account to the privatekey
-	// validation is done via email when requesting a key
-
-	// if cdkeys.accountid and privatekeys.accountid are the same, but email tied to that key
-	// in accounts table is different to privatekeys.email, then something fishy is going on.
-	// the same goes if both emails are the same, but the sequence numbers are different.
-
-	sprintf(SQL, "UPDATE %s SET accountid = ? WHERE email = ? AND sequencenum = ? LIMIT 1", TABLENAME[CDKEYSPRIVATE_TABLE]);
-
-	MySQLQuery query(this->m_Connection, SQL);
-	MYSQL_BIND params[3];
-	memset(params, 0, sizeof(params));
-
-	query.Bind(&params[0], &accountid);
-	query.Bind(&params[1], email, strlen(email));
-	query.Bind(&params[2], &sequencenum);
-
-	if(!query.StmtExecute(params))
-		DatabaseLog("UpdatePrivateCDKeyAccountID() failed:");
-
-	if (!query.Success())
-		return false;
-
-	return true;
-}
-
 bool MySQLDatabase::InsertUserAccount(const char *email, const char *password, const char *country, const char *realcountry, const uchar *emailgamerelated, const uchar *acceptsemail, uint *accountInsertId)
 {
 	char SQL[4096];
@@ -710,7 +592,7 @@ bool MySQLDatabase::InsertUserCDKeyInfo(const uint accountId, const uint sequenc
 	return true;
 }
 
-bool MySQLDatabase::CreateUserAccount(const bool isPrivateKeyUser, const char *email, const char *password, const char *country, const char *realcountry, const uchar *emailgamerelated, const uchar *acceptsemail, const uint sequenceNum, const ulong cipherKeys[])
+bool MySQLDatabase::CreateUserAccount(const char *email, const char *password, const char *country, const char *realcountry, const uchar *emailgamerelated, const uchar *acceptsemail, const uint sequenceNum, const ulong cipherKeys[])
 {
 	if (!TestDatabase())
 	{
@@ -726,16 +608,6 @@ bool MySQLDatabase::CreateUserAccount(const bool isPrivateKeyUser, const char *e
 	{
 		RollbackTransaction();
 		return false;
-	}
-
-	// if private key user, attach the new account to privatekeys.accountid
-	if (isPrivateKeyUser)
-	{
-		if (!UpdatePrivateCDKeyAccountID(sequenceNum, email, accountInsertId))
-		{
-			RollbackTransaction();
-			return false;
-		}
 	}
 
 	if (!InsertUserCDKeyInfo(accountInsertId, sequenceNum, cipherKeys))

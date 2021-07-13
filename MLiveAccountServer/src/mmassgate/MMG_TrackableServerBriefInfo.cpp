@@ -35,13 +35,13 @@ bool MMG_TrackableServerBriefInfo::FromStream(MN_ReadMessage *aMessage)
 	if (!aMessage->ReadUShort(this->m_MassgateCommPort))
 		return false;
 
-	if(!aMessage->ReadUInt64(this->m_CycleHash))
+	if (!aMessage->ReadUInt64(this->m_CycleHash))
 		return false;
 
-	if(!aMessage->ReadUChar(this->m_ServerType))
+	if (!aMessage->ReadUChar(this->m_ServerType))
 		return false;
 
-	if(!aMessage->ReadBool(this->m_IsRankBalanced))
+	if (!aMessage->ReadBool(this->m_IsRankBalanced))
 		return false;
 
 	return true;

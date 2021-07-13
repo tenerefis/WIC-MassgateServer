@@ -29,14 +29,12 @@ void MMG_TrackableServerFullInfo::ToStream(MN_WriteMessage *aMessage)
 
 	// The game always expects the total number of "players", similar to bf_PlayerCount + bf_SpectatorCount,
 	// but can't be confirmed right now. Send all 64 slots for the time being.
-	for(int i = 0; i < this->bf_MaxPlayers; i++)
+	for (int i = 0; i < this->bf_MaxPlayers; i++)
 		this->m_Players[i].ToStream(aMessage);
 }
 
 bool MMG_TrackableServerFullInfo::FromStream(MN_ReadMessage *aMessage)
 {
-	//this is probably never used.
-
 	if (!aMessage->ReadUInt(this->m_GameVersion)
 		|| !aMessage->ReadUShort(this->m_ProtocolVersion)
 		|| !aMessage->ReadUInt64(this->m_CurrentMapHash)
@@ -88,14 +86,14 @@ bool MMG_TrackableServerFullInfo::FromStream(MN_ReadMessage *aMessage)
 		return false;
 
 	// read players
-	//if (this->bf_PlayerCount >= this->bf_MaxPlayers)
-	//	return false;
-	//
-	//for (int i = 0; i < this->bf_PlayerCount; i++)
-	//{
-	//	if (!this->m_Players[i].FromStream(aMessage))
-	//		return false;
-	//}
+	if (this->bf_PlayerCount >= this->bf_MaxPlayers)
+		return false;
+	
+	for (int i = 0; i < this->bf_PlayerCount; i++)
+	{
+		if (!this->m_Players[i].FromStream(aMessage))
+			return false;
+	}
 
 	return true;
 }
