@@ -74,6 +74,8 @@ struct Acquaintance
 
 #ifndef USING_MYSQL_DATABASE
 //#define USING_MYSQL_DATABASE
+//#define USING_PROFILE_GUESTBOOK
+//#define USING_CLAN_GUESTBOOK
 #endif
 
 #define ROUND_TIME(time_as_int) (time_as_int / 86400) * 86400;
@@ -225,6 +227,7 @@ public:
 	bool	DeleteProfileClanMessages	(const uint profileId);
 	bool	UpdateClanPlayerOfWeek		(const uint clanId, const uint profileId);
 	bool	DeleteClan					(const uint clanId);
+	bool	QueryClanLeader				(const uint profileId, MMG_Profile *profile);
 	bool	QueryClanFullInfo			(const uint clanId, uint *dstMemberCount, MMG_Clan::FullInfo *fullinfo);
 	bool	QueryClanDescription		(const uint clanId, MMG_Clan::Description *description);
 	bool	SaveClanEditableVariables	(const uint clanId, const uint profileId, const wchar_t *motto, const wchar_t *motd, const wchar_t *homepage);

@@ -3442,9 +3442,6 @@ bool MySQLDatabase::QueryProfileGuestbook(const uint profileId, uint *dstEntryCo
 
 			while(query.StmtFetch())
 			{
-				if (i >= 30)
-					break;
-
 				guestbook->m_Entries[i].m_MessageId = id;
 				guestbook->m_Entries[i].m_Timestamp = timestamp;
 				guestbook->m_Entries[i].m_ProfileId = posterid;
@@ -3454,7 +3451,7 @@ bool MySQLDatabase::QueryProfileGuestbook(const uint profileId, uint *dstEntryCo
 				i++;
 			}
 
-			*dstEntryCount = i;
+			*dstEntryCount = count;
 		}
 	}
 
@@ -4081,6 +4078,77 @@ bool MySQLDatabase::DeleteClan(const uint clanId)
 
 	// commit the transaction
 	this->CommitTransaction();
+
+	return true;
+}
+
+bool MySQLDatabase::QueryClanLeader(const uint clanId, MMG_Profile *profile)
+{
+	char SQL[4096];
+	memset(SQL, 0, sizeof(SQL));
+
+	sprintf(SQL, "SELECT id, name, onlinestatus, rank, clanid, rankinclan FROM %s WHERE clanid = ? AND rankinclan = 1 LIMIT 1", TABLENAME[PROFILES_TABLE]);
+
+	MySQLQuery query(this->m_Connection, SQL);
+	MYSQL_BIND param[1], results[6];
+	memset(param, 0, sizeof(param));
+	memset(results, 0, sizeof(results));
+
+	wchar_t name[WIC_NAME_MAX_LENGTH];
+	memset(name, 0, sizeof(name));
+
+	uint id, onlinestatus, clanid;
+	uchar rank, rankinclan;
+
+	query.Bind(&param[0], &clanId);
+
+	query.Bind(&results[0], &id);
+	query.Bind(&results[1], name, ARRAYSIZE(name));
+	query.Bind(&results[2], &onlinestatus);
+	query.Bind(&results[3], &rank);
+	query.Bind(&results[4], &clanid);
+	query.Bind(&results[5], &rankinclan);
+
+	if(!query.StmtExecute(param, results))
+	{
+		//DatabaseLog("QueryProfileName() failed: profileid(%u)", profileId);
+
+		profile->m_ProfileId = 0;
+		memset(profile->m_Name, 0, sizeof(profile->m_Name));
+		profile->m_Rank = 0;
+		profile->m_ClanId = 0;
+		profile->m_RankInClan = 0;
+		profile->m_OnlineStatus = 0;
+	}
+	else
+	{
+		if (!query.StmtFetch())
+		{
+			//DatabaseLog("profile id(%u) not found", profileId);
+
+			profile->m_ProfileId = 0;
+			memset(profile->m_Name, 0, sizeof(profile->m_Name));
+			profile->m_Rank = 0;
+			profile->m_ClanId = 0;
+			profile->m_RankInClan = 0;
+			profile->m_OnlineStatus = 0;
+		}
+		else
+		{
+			profile->m_ProfileId = id;
+			wcsncpy(profile->m_Name, name, WIC_NAME_MAX_LENGTH);
+			profile->m_Rank = rank;
+			profile->m_ClanId = clanid;
+			profile->m_RankInClan = rankinclan;
+			profile->m_OnlineStatus = onlinestatus;
+
+			if (clanid > 0)
+				AppendClanTag(profile);
+		}
+	}
+
+	if (!query.Success())
+		return false;
 
 	return true;
 }

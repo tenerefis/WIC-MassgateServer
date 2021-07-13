@@ -188,7 +188,7 @@ bool MMG_Messaging::HandleMessage(SvClient *aClient, MN_ReadMessage *aMessage, M
 
 			DebugLog(L_INFO, "MESSAGING_RESPOND_PROFILENAME: sending %d profile name/s", profileCount);
 
-			uint chunkSize = 64; // profile count, not packet size
+			uint chunkSize = 32; // profile count, not packet size
 			uint itemsLeft = profileCount;
 
 			while (itemsLeft > chunkSize)
@@ -763,6 +763,16 @@ bool MMG_Messaging::HandleMessage(SvClient *aClient, MN_ReadMessage *aMessage, M
 			// request clan info from database
 			MySQLDatabase::ourInstance->QueryClanFullInfo(clanId, &memberCount, &clanFullInfo);
 
+			// if a clan gets to large and the clanleader is never sent in the first packet (max 128) the client will crash
+			MMG_Profile profile;
+			MySQLDatabase::ourInstance->QueryClanLeader(clanId, &profile);
+
+			if (aClient->GetProfile()->m_ProfileId != profile.m_ProfileId)
+			{
+				responseMessage.WriteDelimiter(MMG_ProtocolDelimiters::MESSAGING_RESPOND_PROFILENAME);
+				profile.ToStream(&responseMessage);
+			}
+
 			DebugLog(L_INFO, "MESSAGING_CLAN_FULL_INFO_RESPONSE:");
 			responseMessage.WriteDelimiter(MMG_ProtocolDelimiters::MESSAGING_CLAN_FULL_INFO_RESPONSE);
 			
@@ -874,6 +884,8 @@ bool MMG_Messaging::HandleMessage(SvClient *aClient, MN_ReadMessage *aMessage, M
 		}
 		break;
 
+#ifdef USING_MYSQL_DATABASE
+#ifdef USING_CLAN_GUESTBOOK
 		case MMG_ProtocolDelimiters::MESSAGING_CLAN_GUESTBOOK_POST_REQ:
 		{
 			DebugLog(L_INFO, "MESSAGING_CLAN_GUESTBOOK_POST_REQ:");
@@ -990,6 +1002,8 @@ bool MMG_Messaging::HandleMessage(SvClient *aClient, MN_ReadMessage *aMessage, M
 		}
 		break;
 
+#endif
+#endif
 		case MMG_ProtocolDelimiters::MESSAGING_CLAN_MESSAGE_SEND_REQ:
 		{
 			DebugLog(L_INFO, "MESSAGING_CLAN_MESSAGE_SEND_REQ:");
@@ -1310,6 +1324,7 @@ bool MMG_Messaging::HandleMessage(SvClient *aClient, MN_ReadMessage *aMessage, M
 		}
 		break;
 #ifdef USING_MYSQL_DATABASE
+#ifdef USING_PROFILE_GUESTBOOK
 		case MMG_ProtocolDelimiters::MESSAGING_PROFILE_GUESTBOOK_POST_REQ:
 		{
 			DebugLog(L_INFO, "MESSAGING_PROFILE_GUESTBOOK_POST_REQ:");
@@ -1416,6 +1431,7 @@ bool MMG_Messaging::HandleMessage(SvClient *aClient, MN_ReadMessage *aMessage, M
 			// no response, rest of packet is MESSAGING_PROFILE_GUESTBOOK_GET_REQ
 		}
 		break;
+#endif
 #endif
 		case MMG_ProtocolDelimiters::MESSAGING_PROFILE_SET_EDITABLES_REQ:
 		{

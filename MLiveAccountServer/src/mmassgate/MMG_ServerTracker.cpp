@@ -429,13 +429,15 @@ bool MMG_ServerTracker::HandleMessage(SvClient *aClient, MN_ReadMessage *aMessag
 			responseMessage.WriteUInt(8);				// Medal count (MUST be 8)
 
 			uint buffer[256];
+			memset(buffer, 0, sizeof(buffer));
+
 			MMG_BitWriter<unsigned int> writer(buffer, sizeof(buffer) * 8);
 
-			for (int i = 0; i < 8; i++)
-			{
-				writer.WriteBits(3, 2);// Medal type (0 to 3)
-				writer.WriteBits(0, 2);// Medal stars (0 to 3)
-			}
+			//for (int i = 0; i < 8; i++)
+			//{
+			//	writer.WriteBits(3, 2);// Medal type (0 to 3)
+			//	writer.WriteBits(0, 2);// Medal stars (0 to 3)
+			//}
 
 			responseMessage.WriteRawData(buffer, sizeof(buffer));
 
